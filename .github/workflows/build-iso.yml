@@ -1,43 +1,43 @@
 name: Build ArenaOS ISO
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-build-iso:
-runs-on: ubuntu-latest
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+  build-iso:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Build ArenaOS image
-    run: |
-      sudo podman build --file Containerfile --tag localhost/arenaos:latest .
+      - name: Build ArenaOS image
+        run: |
+          sudo podman build --file Containerfile --tag localhost/arenaos:latest .
 
-  - name: Build installer image
-    run: |
-      sudo podman build --file Containerfile.installer \
-        --build-arg ARENAOS_IMAGE=localhost/arenaos:latest \
-        --tag localhost/arenaos-installer:latest .
+      - name: Build installer image
+        run: |
+          sudo podman build --file Containerfile.installer \
+            --build-arg ARENAOS_IMAGE=localhost/arenaos:latest \
+            --tag localhost/arenaos-installer:latest .
 
-  - name: Generate custom ISO
-    run: |
-      mkdir -p output
-      sudo podman run --rm --privileged --pull=newer \
-        --security-opt label=type:unconfined_t \
-        --volume "$(pwd)/output:/output" \
-        --volume /var/lib/containers/storage:/var/lib/containers/storage \
-        quay.io/centos-bootc/bootc-image-builder:latest \
-        --type bootc-installer \
-        --local \
-        --bootc-installer-payload-ref localhost/arenaos:latest \
-        --rootfs btrfs \
-        --output /output \
-        localhost/arenaos-installer:latest
+      - name: Generate custom ISO
+        run: |
+          mkdir -p output
+          sudo podman run --rm --privileged --pull=newer \
+            --security-opt label=type:unconfined_t \
+            --volume "$(pwd)/output:/output" \
+            --volume /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type bootc-installer \
+            --local \
+            --bootc-installer-payload-ref localhost/arenaos:latest \
+            --rootfs btrfs \
+            --output /output \
+            localhost/arenaos-installer:latest
 
-  - name: Upload ISO artifact
-    uses: actions/upload-artifact@v4
-    with:
-      name: arenaos-iso
-      path: output/**/*.iso
-      if-no-files-found: error
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arenaos-iso
+          path: output/**/*.iso
+          if-no-files-found: error
